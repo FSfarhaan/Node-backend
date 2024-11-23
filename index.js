@@ -4,7 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs'); // Use bcryptjs instead of bcrypt for compatibility
 const jwt = require('jsonwebtoken');
-const MONGO_URI = "mongodb+srv://farhaan8d:m8fs2f7s6@cluster0.tl8lett.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+const MONGO_URI = "mongodb+srv://farhaan8d:m8fs2f7s6@cluster0.tl8lett.mongodb.net/AquaDB?retryWrites=true&w=majority&appName=Cluster0"
 
 const app = express();
 const PORT = 3000;
@@ -27,12 +27,15 @@ const UserSchema = new mongoose.Schema({
 const User = mongoose.model('User', UserSchema);
 
 const FishLogSchema = new mongoose.Schema({
-    status: {},
+    status: { type: String, required: true },
     title: { type: String, required: true },
     desc: { type: String, required: true },
-    date: { type: String },
     fishName: { type: String, required: true },
-    fishWt: { type: String, required: true },
+    fishWeight: { type: String, required: true },
+    date: { type: Date, required: true },
+    location: { type: String, required: true },
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
     image: { type: String, required: true }
 });
   
@@ -96,19 +99,24 @@ app.post('/login', async (req, res) => {
 
 app.post("/uploadToRemote", async (req, res) => {
     try {
-      const { title, desc, fishName, fishWt, image } = req.body;
+      const { status, title, desc, fishName, fishWt, date, location, latitude, longitude, image } = req.body;
   
-      if (!title || !desc || !fishName || !fishWt || !image) {
+      if (!status || !title || !desc || !fishName || !date || !location || !latitude || !longitude || !fishWt || !image) {
         return res.status(400).send({ message: "Please provide necessary details" });
       }
   
       const imageBase64 = Buffer.from(image).toString('base64');
   
       const newFishLog = new FishLog({
+        status,
         title,
         desc,
         fishName,
         fishWt,
+        date: new Date(date),
+        location,
+        latitude,
+        longitude,
         image: imageBase64
       });
   
@@ -120,6 +128,7 @@ app.post("/uploadToRemote", async (req, res) => {
       res.status(500).send({ message: "Internal server error" });
     }
 });
+  
 
 
 // Auth Middleware to verify token
