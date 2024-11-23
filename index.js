@@ -122,10 +122,10 @@ app.post("/uploadToRemote", async (req, res) => {
   
       await newFishLog.save();
   
-      res.status(200).send({ message: "FishLog saved successfully", data: newFishLog });
+      res.status(200).send({ message: "FishLog saved successfully" });
     } catch (error) {
       console.error(error);
-      res.status(500).send({ message: "Internal server error" });
+      res.status(500).send({ message: "Internal server error hua hai kahi to" });
     }
 });
   
