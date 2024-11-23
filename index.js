@@ -26,6 +26,18 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 
+const FishLogSchema = new mongoose.Schema({
+    status: {},
+    title: { type: String, required: true },
+    desc: { type: String, required: true },
+    date: { type: String },
+    fishName: { type: String, required: true },
+    fishWt: { type: String, required: true },
+    image: { type: String, required: true }
+});
+  
+const FishLog = mongoose.model("FishLog", FishLogSchema);
+
 // Updated function signature for the signup route
 app.post('/signup', async (req, res) => { // Fixed the order of parameters
     const { name, email, password } = req.body;
@@ -81,6 +93,34 @@ app.post('/login', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
+app.post("/uploadToRemote", async (req, res) => {
+    try {
+      const { title, desc, fishName, fishWt, image } = req.body;
+  
+      if (!title || !desc || !fishName || !fishWt || !image) {
+        return res.status(400).send({ message: "Please provide necessary details" });
+      }
+  
+      const imageBase64 = Buffer.from(image).toString('base64');
+  
+      const newFishLog = new FishLog({
+        title,
+        desc,
+        fishName,
+        fishWt,
+        image: imageBase64
+      });
+  
+      await newFishLog.save();
+  
+      res.status(200).send({ message: "FishLog saved successfully", data: newFishLog });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: "Internal server error" });
+    }
+});
+
 
 // Auth Middleware to verify token
 const auth = (req, res, next) => {
