@@ -14,7 +14,7 @@ app.use(express.json());
 
 // Connect to MongoDB
 mongoose
-    .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .connect(MONGO_URI)
     .then(() => console.log("Connected to MongoDB Successfully"))
     .catch((err) => console.error("Error: ", err));
 
@@ -99,9 +99,9 @@ app.post('/login', async (req, res) => {
 
 app.post("/uploadToRemote", async (req, res) => {
     try {
-      const { status, title, desc, fishName, fishWt, date, location, latitude, longitude, image } = req.body;
+      const { status, title, desc, fishName, fishWeight, date, location, latitude, longitude, image } = req.body;
   
-      if (!status || !title || !desc || !fishName || !date || !location || !latitude || !longitude || !fishWt || !image) {
+      if (!status || !title || !desc || !fishName || !date || !location || !latitude || !longitude || !fishWeight || !image) {
         return res.status(400).send({ message: "Please provide necessary details" });
       }
   
@@ -112,7 +112,7 @@ app.post("/uploadToRemote", async (req, res) => {
         title,
         desc,
         fishName,
-        fishWt,
+        fishWeight,
         date: new Date(date),
         location,
         latitude,
