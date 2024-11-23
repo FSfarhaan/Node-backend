@@ -8,6 +8,11 @@ const MONGO_URI = "mongodb+srv://farhaan8d:m8fs2f7s6@cluster0.tl8lett.mongodb.ne
 
 const app = express();
 const PORT = 3000;
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.memoryStorage(); // Store the file in memory (you can also store it on disk if needed)
+const upload = multer({ storage: storage });
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -42,31 +47,39 @@ const FishLogSchema = new mongoose.Schema({
 const FishLog = mongoose.model("FishLog", FishLogSchema);
 
 // Updated function signature for the signup route
-app.post('/signup', async (req, res) => { // Fixed the order of parameters
-    const { name, email, password } = req.body;
-
+app.post("/uploadToRemote", upload.single('image'), async (req, res) => {
     try {
-        // Check if user already exists
-        let user = await User.findOne({ email }); // Added await to findOne
-        if (user) {
-            return res.status(400).json({ msg: "User already exists" });
+        const { status, title, desc, fishName, fishWeight, date, location, latitude, longitude } = req.body;
+        const image = req.file; // The image is in req.file (multer handles it)
+
+        // Check if all required fields are provided
+        if (!status || !title || !desc || !fishName || !date || !location || !latitude || !longitude || !image) {
+            return res.status(400).send({ message: "Please provide necessary details" });
         }
 
-        // Hash the password
-        const salt = await bcrypt.genSalt(10); // Added await here
-        const hashedPassword = await bcrypt.hash(password, salt); // Added await here
+        // Convert image buffer to Base64 (only if needed)
+        const imageBase64 = image.buffer.toString('base64'); // Use the buffer from multer
 
-        user = new User({ name, email, password: hashedPassword });
-        await user.save();
+        // Save the fish log to the database
+        const newFishLog = new FishLog({
+            status,
+            title,
+            desc,
+            fishName,
+            fishWeight,
+            date: new Date(date),
+            location,
+            latitude,
+            longitude,
+            image: imageBase64 // Save the Base64 encoded image
+        });
 
-        // Generate JWT
-        const payload = { userId: user._id };
-        const token = jwt.sign(payload, "farhaanshaikh");
-
-        res.status(201).json({ token });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
+        await newFishLog.save();
+        
+        res.status(200).send({ message: "FishLog saved successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Internal server error" });
     }
 });
 
@@ -95,40 +108,7 @@ app.post('/login', async (req, res) => {
         console.error(err.message);
         res.status(500).send('Server error');
     }
-});
-
-app.post("/uploadToRemote", async (req, res) => {
-    try {
-      const { status, title, desc, fishName, fishWeight, date, location, latitude, longitude, image } = req.body;
-  
-      if (!status || !title || !desc || !fishName || !date || !location || !latitude || !longitude || !fishWeight || !image) {
-        return res.status(400).send({ message: "Please provide necessary details" });
-      }
-  
-      const imageBase64 = Buffer.from(image).toString('base64');
-  
-      const newFishLog = new FishLog({
-        status,
-        title,
-        desc,
-        fishName,
-        fishWeight,
-        date: new Date(date),
-        location,
-        latitude,
-        longitude,
-        image: imageBase64
-      });
-  
-      await newFishLog.save();
-  
-      res.status(200).send({ message: "FishLog saved successfully" });
-    } catch (error) {
-      console.error(error);
-      res.status(500).send({ message: "Internal server error hua hai kahi to" });
-    }
-});
-  
+});  
 
 
 // Auth Middleware to verify token
